@@ -1,0 +1,133 @@
+#Ex4
+#a
+A = iris[1:150,2]
+flowers = as.vector(unlist(A))
+
+type=factor(c(rep(1,50),rep(2,50),rep(3,50)),
+            labels =c("setosa","versicolor","virginica"))
+data=data.frame(flowers,type)
+
+mu<-mean(A)
+mui<-tapply(A,type,mean)
+alpha<-mui - mu
+
+LSE <- mui
+
+SST <- sum((A - mu)^2)
+SSW <- sum((A[type=="setosa"] - mui[1])^2)+sum((A[type=="versicolor"] - mui[2])^2)+sum((A[type=="virginica"] - mui[3])^2)
+
+I = 3
+n = 150
+
+f <- ((SST-SSW)/(I-1))/(SSW/(n-I))
+pval <- 1 - pf(f, df1 = I - 1, df2 = n - I)
+#b
+M=c(A[type=="setosa"]-mui[1],A[type=="versicolor"] - mui[2],A[type=="virginica"] - mui[3])
+#normality
+qqnorm(M)
+qqline(M, col="red")
+shapiro.test(M)
+#homoscedasticity
+bartlett.test(flowers~type, data=data)
+
+#c
+anova(lm(flowers~type, data=data))
+
+#d
+kruskal.test(flowers~type, data=data)
+
+#ass5
+#A
+library(dplyr)
+library(ggplot2)
+without <- data.frame(select(npk[npk$N!=1,], block, yield))
+with <- data.frame(select(npk[npk$N==1,], block, yield))
+mean_without <- aggregate(.~block, data = without, mean)
+mean_with <- aggregate(.~block, data = with, mean)
+
+combined <- t(cbind(mean_with, mean_without$yield))
+colnames(combined) = combined[1, ]
+combined = combined[-1, ] 
+combined <- data.frame(apply(combined, 2, function(x) as.numeric(as.character(x))))
+barplot(as.matrix(combined),beside = TRUE, main="Average Yield",
+        xlab="Blocks", col=c("green","blue"), legend.text =  c('with soil','without soil'),
+        args.legend = list(title = "Legend", x = "topright",inset = c(0.19, -0.05)))
+
+#B
+aovmod <- aov(yield ~ N*block, npk)
+model.tables(aovmod) # estimates for alpha's, beta's and gamma's
+summary(aovmod)
+
+#C
+aovmod <- aov(yield ~ K*block, npk)
+model.tables(aovmod) # estimates for alpha's, beta's and gamma's
+summary(aovmod)
+aovmod <- aov(yield ~ P*block, npk)
+model.tables(aovmod) # estimates for alpha's, beta's and gamma's
+summary(aovmod)
+
+
+
+
+#6A
+diet = read.table("C:/Users/ew/Downloads/diet.txt", header = TRUE)
+diet$lost = diet$preweight - diet$weight6weeks
+diet
+
+model=lm(lost ~ diet,data=diet) # or aovmodel=aov(sales~city,data=data)
+anova(model)
+summary(model)
+
+summary(diet$preweight)
+summary(diet$weight6weeks)
+ggplot(diet, aes(x = lost)) +
+  geom_histogram(bins = 15)
+
+qqnorm(resid(model)) # qqline(resid(model),lty=3,col="red")
+shapiro.test(resid(model)) # H0:normality
+## homoscedasticity
+plot(fitted(model),resid(model),xlab="fitted values",ylab="residuals", main="residuals vs fitted")
+## plot(residuals(model)~fitted(model),xlab="fitted values",ylab="residuals",main="residuals vs fitted")
+abline(h=0,lty=3,col="red")
+## Bartlett's test of homogeneity (homoscedasticity) of variances
+# H0 that all k population variances are equal  
+# against the alternative that at least two are different.
+bartlett.test(lost ~ diet,data=diet) # H0: homoscedasticity
+
+# or, to get the first two diagnostic plot
+# par(mfcol=c(1,2)); plot
+
+#One-way ANOVA on ranks is a non-parametric method (no normality assumed)
+#for testing whether samples originate from the same distribution.
+kruskal.test(lost ~ diet,data=diet) # stat=33.027,df=4,p-value=1.179e-06
+
+
+
+
+#C
+aovmod=aov(lost~diet*gender,diet)
+model.tables(aovmod) # estimates for alpha's, beta's and gamma's
+summary(aovmod)
+## the grand mean mu is found as follows
+mean(diet$lost)
+
+#D
+mod.full=lm(lost~diet*gender,diet)   # full model
+anova(mod.full) # last line is relevant, test for interaction
+## H0: no interaction versus H1: there is an interaction 
+## H0: smaller model holds versus H1: smaller model is not true 
+mod.add=lm(lost~diet*gender,diet) # additive model
+anova(mod.add,mod.full) # another (general) way to test for interaction
+
+aovmod=aov(lost~diet*height,diet)
+model.tables(aovmod) # estimates for alpha's, beta's and gamma's
+summary(aovmod)
+## the grand mean mu is found as follows
+mean(diet$lost)
+
+mod.full=lm(lost~diet*height,diet)   # full model
+anova(mod.full) # last line is relevant, test for interaction
+## H0: no interaction versus H1: there is an interaction 
+## H0: smaller model holds versus H1: smaller model is not true 
+mod.add=lm(lost~diet*height,diet) # additive model
+anova(mod.add,mod.full) # another (general) way to test for interaction
